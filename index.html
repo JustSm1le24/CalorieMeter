@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StayFit</title>
+    <!-- Error Handler for Debugging -->
+    <script>
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.top = '0';
+            errDiv.style.left = '0';
+            errDiv.style.width = '100%';
+            errDiv.style.backgroundColor = '#ef4444';
+            errDiv.style.color = 'white';
+            errDiv.style.padding = '20px';
+            errDiv.style.zIndex = '9999';
+            errDiv.style.fontFamily = 'monospace';
+            errDiv.innerHTML = `<strong>Error:</strong> ${message} <br> <small>${source}:${lineno}:${colno}</small>`;
+            document.body.appendChild(errDiv);
+            console.error('Global Error:', message, error);
+        };
+        window.onunhandledrejection = function (event) {
+            const errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.top = '50px';
+            errDiv.style.left = '0';
+            errDiv.style.width = '100%';
+            errDiv.style.backgroundColor = '#ef4444';
+            errDiv.style.color = 'white';
+            errDiv.style.padding = '20px';
+            errDiv.style.zIndex = '9999';
+            errDiv.style.fontFamily = 'monospace';
+            errDiv.innerHTML = `<strong>Promise Rejection:</strong> ${event.reason}`;
+            document.body.appendChild(errDiv);
+        };
+    </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#ec4899',
+                        accent: '#8b5cf6',
+                        surface: '#1e293b',
+                        'surface-light': '#334155',
+                        success: '#22c55e',
+                        danger: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Prop Types (Required for Recharts) -->
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    <!-- Recharts -->
+    <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            /* Indigo 500 */
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            /* Pink 500 */
+            --accent: #8b5cf6;
+            /* Violet 500 */
+            --background: #0f172a;
+            /* Slate 900 */
+            --surface: #1e293b;
+            /* Slate 800 */
+            --surface-light: #334155;
+            /* Slate 700 */
+            --text: #f8fafc;
+            /* Slate 50 */
+            --text-muted: #94a3b8;
+            /* Slate 400 */
+            --success: #22c55e;
+            --danger: #ef4444;
+
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        input,
+        select {
+            font-family: inherit;
+            background-color: var(--surface);
+            border: 1px solid var(--surface-light);
+            color: var(--text);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        /* Utilities */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--surface-light);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        #root {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, LabelList, ReferenceLine } = Recharts;
+
+        // --- UTILS: calculator.js ---
+        const calculateBMR = (weight, height, age, gender) => {
+            // Mifflin-St Jeor Equation
+            // Weight in kg, Height in cm, Age in years
+            let bmr = 10 * weight + 6.25 * height - 5 * age;
+            if (gender === 'male') {
+                bmr += 5;
+            } else {
+                bmr -= 161;
+            }
+            return bmr;
+        };
+
+        const calculateTDEE = (bmr, activityLevel = 'moderate') => {
+            const multipliers = {
+                sedentary: 1.2,
+                light: 1.375,
+                moderate: 1.55,
+                active: 1.725,
+                veryActive: 1.9,
+            };
+            return Math.round(bmr * (multipliers[activityLevel] || 1.55));
+        };
+
+        const calculateTargetCalories = (tdee, goal) => {
+            switch (goal) {
+                case 'lose':
+                    return tdee - 500; // Deficit
+                case 'gain':
+                    return tdee + 500; // Surplus
+                default:
+                    return tdee; // Maintain
+            }
+        };
+
+        const calculateMacros = (calories, dietType) => {
+            let ratios = { protein: 0.3, carbs: 0.4, fat: 0.3 }; // Balanced default
+
+            if (dietType === 'low-carb') {
+                ratios = { protein: 0.4, carbs: 0.2, fat: 0.4 };
+            } else if (dietType === 'high-protein') {
+                ratios = { protein: 0.5, carbs: 0.3, fat: 0.2 };
+            } else if (dietType === 'keto') {
+                ratios = { protein: 0.25, carbs: 0.05, fat: 0.7 };
+            }
+
+            return {
+                protein: Math.round((calories * ratios.protein) / 4),
+                carbs: Math.round((calories * ratios.carbs) / 4),
+                fat: Math.round((calories * ratios.fat) / 9),
+            };
+        };
+
+        // --- UTILS: data.js ---
+        const DIETS = [
+            {
+                id: 'balanced',
+                name: 'Balanced',
+                description: 'A healthy mix of all macronutrients. Sustainable for long-term.',
+                ratios: { protein: 0.3, carbs: 0.4, fat: 0.3 }
+            },
+            {
+                id: 'low-carb',
+                name: 'Low Carb',
+                description: 'Reduced carbohydrates to help reduce insulin levels.',
+                ratios: { protein: 0.4, carbs: 0.2, fat: 0.4 }
+            },
+            {
+                id: 'high-protein',
+                name: 'High Protein',
+                description: 'Great for muscle gain and satiety.',
+                ratios: { protein: 0.5, carbs: 0.3, fat: 0.2 }
+            },
+            {
+                id: 'keto',
+                name: 'Keto',
+                description: 'Very low carb, high fat. Forces body into ketosis.',
+                ratios: { protein: 0.25, carbs: 0.05, fat: 0.7 }
+            }
+        ];
+
+        const WORKOUT_TYPES = [
+            'Fullbody',
+            'Arms',
+            'Legs',
+            'Back',
+            'Chest',
+            'Glutes'
+        ];
+
+        // Simple Ingredient Database (Calories per 100g)
+        const INGREDIENTS = [
+            { id: 'chicken_breast', name: 'Chicken Breast (Raw)', calories: 165 },
+            { id: 'rice_white', name: 'White Rice (Cooked)', calories: 130 },
+            { id: 'egg', name: 'Egg (Large)', calories: 155 }, // approx per 100g
+            { id: 'oats', name: 'Oats (Raw)', calories: 389 },
+            { id: 'banana', name: 'Banana', calories: 89 },
+            { id: 'milk', name: 'Whole Milk', calories: 61 },
+            { id: 'avocado', name: 'Avocado', calories: 160 },
+            { id: 'bread', name: 'Whole Wheat Bread', calories: 247 },
+            { id: 'beef', name: 'Ground Beef (Lean)', calories: 250 },
+            { id: 'salmon', name: 'Salmon (Raw)', calories: 208 },
+            { id: 'broccoli', name: 'Broccoli', calories: 34 },
+            { id: 'potato', name: 'Potato (Boiled)', calories: 87 },
+            { id: 'olive_oil', name: 'Olive Oil', calories: 884 },
+            { id: 'almonds', name: 'Almonds', calories: 579 },
+            { id: 'yogurt', name: 'Greek Yogurt', calories: 59 },
+        ];
+
+        const ALLERGY_SWAPS = {
+            'Nuts': {
+                'Almonds': 'Sunflower Seeds',
+                'Walnuts': 'Pumpkin Seeds',
+                'Macadamia Nuts': 'Olives',
+                'Peanut Butter': 'Sunflower Butter'
+            },
+            'Dairy': {
+                'Milk': 'Almond Milk',
+                'Greek Yogurt': 'Coconut Yogurt',
+                'Butter': 'Olive Oil',
+                'Cheese': 'Nutritional Yeast',
+                'Parmesan': 'Nutritional Yeast',
+                'Mozzarella Stick': 'Beef Jerky',
+                'Whey': 'Pea Protein'
+            },
+            'Gluten': {
+                'Oats': 'Gluten-Free Oats',
+                'Whole Wheat Bread': 'Gluten-Free Bread',
+                'Whole Wheat Tortilla': 'Corn Tortilla',
+                'Soy Sauce': 'Tamari'
+            },
+            'Eggs': {
+                'Eggs': 'Tofu Scramble',
+                'Egg': 'Tofu',
+                'Egg Whites': 'Tofu',
+                'Mayo': 'Avocado Mash'
+            },
+            'Shellfish': {
+                'Shrimp': 'Chicken',
+                'Crab': 'White Fish'
+            }
+        };
+
+        const generateDietPlan = (targetCalories, dietType, userAllergies = []) => {
+            const meals = [
+                { name: 'Breakfast', percent: 0.25 },
+                { name: 'Lunch', percent: 0.35 },
+                { name: 'Dinner', percent: 0.30 },
+                { name: 'Snack', percent: 0.10 }
+            ];
+
+            const dietFoods = {
+                balanced: {
+                    Breakfast: [
+                        { name: 'Oatmeal with Berries', ingredients: ['50g Oats', '150ml Milk', '50g Mixed Berries', '1 tsp Honey'], instructions: 'Cook oats in milk. Top with berries and honey.' },
+                        { name: 'Greek Yogurt & Honey', ingredients: ['200g Greek Yogurt', '1 tbsp Honey', '10g Walnuts'], instructions: 'Mix honey into yogurt. Top with walnuts.' },
+                        { name: 'Scrambled Eggs on Toast', ingredients: ['2 Eggs', '1 slice Whole Wheat Bread', '5g Butter'], instructions: 'Scramble eggs in butter. Serve on toasted bread.' }
+                    ],
+                    Lunch: [
+                        { name: 'Grilled Chicken Salad', ingredients: ['150g Chicken Breast', '100g Mixed Greens', '10 Cherry Tomatoes', '1 tbsp Olive Oil'], instructions: 'Grill chicken. Toss greens with oil. Combine.' },
+                        { name: 'Turkey Wrap', ingredients: ['1 Whole Wheat Tortilla', '100g Turkey Breast', '30g Avocado', 'Lettuce'], instructions: 'Layer ingredients on tortilla and roll tight.' },
+                        { name: 'Quinoa Bowl', ingredients: ['100g Cooked Quinoa', '100g Chickpeas', '50g Cucumber', 'Lemon Dressing'], instructions: 'Mix all ingredients in a bowl.' }
+                    ],
+                    Dinner: [
+                        { name: 'Salmon with Asparagus', ingredients: ['150g Salmon Fillet', '100g Asparagus', '1 tsp Olive Oil', 'Lemon'], instructions: 'Bake salmon and asparagus at 200°C for 15 mins.' },
+                        { name: 'Lean Beef Stir-fry', ingredients: ['150g Lean Beef Strips', '100g Broccoli', '1 tbsp Soy Sauce', 'Ginger'], instructions: 'Stir-fry beef then veggies. Add sauce.' },
+                        { name: 'Baked Cod with Rice', ingredients: ['150g Cod Fillet', '100g Brown Rice', 'Steamed Spinach'], instructions: 'Bake cod. Serve with rice and spinach.' }
+                    ],
+                    Snack: [
+                        { name: 'Apple & Almonds', ingredients: ['1 Medium Apple', '15g Almonds'], instructions: 'Slice apple and serve with nuts.' },
+                        { name: 'Protein Bar', ingredients: ['1 Protein Bar (Standard)'], instructions: 'Unwrap and enjoy.' },
+                        { name: 'Carrot Sticks with Hummus', ingredients: ['100g Carrots', '30g Hummus'], instructions: 'Dip carrots in hummus.' }
+                    ]
+                },
+                'low-carb': {
+                    Breakfast: [
+                        { name: 'Omelette with Spinach', ingredients: ['3 Eggs', '50g Spinach', '10g Butter'], instructions: 'Whisk eggs. Cook with spinach in butter.' },
+                        { name: 'Avocado & Bacon', ingredients: ['1 Avocado', '2 slices Bacon'], instructions: 'Fry bacon. Serve with sliced avocado.' },
+                        { name: 'Chia Pudding', ingredients: ['30g Chia Seeds', '200ml Almond Milk', 'Stevia'], instructions: 'Soak seeds in milk overnight.' }
+                    ],
+                    Lunch: [
+                        { name: 'Chicken Caesar Salad', ingredients: ['150g Chicken', 'Romaine Lettuce', 'Parmesan', 'Caesar Dressing'], instructions: 'Toss lettuce with dressing. Top with chicken and cheese.' },
+                        { name: 'Tuna Salad Lettuce Wraps', ingredients: ['1 can Tuna', '1 tbsp Mayo', 'Large Lettuce Leaves'], instructions: 'Mix tuna and mayo. Spoon into leaves.' },
+                        { name: 'Zucchini Noodles', ingredients: ['2 Zucchinis', 'Pesto Sauce', 'Cherry Tomatoes'], instructions: 'Spiralize zucchini. Toss with pesto.' }
+                    ],
+                    Dinner: [
+                        { name: 'Steak with Broccoli', ingredients: ['200g Steak', '150g Broccoli', 'Butter'], instructions: 'Pan sear steak. Steam broccoli with butter.' },
+                        { name: 'Grilled Fish with Veggies', ingredients: ['200g White Fish', 'Mixed Roasted Veggies', 'Olive Oil'], instructions: 'Grill fish. Roast veggies in oil.' },
+                        { name: 'Chicken Thighs with Green Beans', ingredients: ['2 Chicken Thighs', '150g Green Beans', 'Garlic'], instructions: 'Bake chicken. Sauté beans with garlic.' }
+                    ],
+                    Snack: [
+                        { name: 'Cheese Stick', ingredients: ['1 Mozzarella Stick'], instructions: 'Ready to eat.' },
+                        { name: 'Hard Boiled Egg', ingredients: ['1 Egg', 'Salt'], instructions: 'Boil egg for 9 mins.' },
+                        { name: 'Macadamia Nuts', ingredients: ['30g Macadamia Nuts'], instructions: 'Portion out and eat.' }
+                    ]
+                },
+                'high-protein': {
+                    Breakfast: [{ name: 'Egg White Omelette', ingredients: ['5 Egg Whites', 'Spinach', 'Peppers'], instructions: 'Cook egg whites with veggies.' }],
+                    Lunch: [{ name: 'Chicken Breast with Rice', ingredients: ['200g Chicken', '100g Rice', 'Broccoli'], instructions: 'Grill chicken, boil rice.' }],
+                    Dinner: [{ name: 'Turkey Meatballs', ingredients: ['200g Turkey Mince', 'Tomato Sauce', 'Zucchini'], instructions: 'Bake meatballs, simmer in sauce.' }],
+                    Snack: [{ name: 'Protein Shake', ingredients: ['1 Scoop Whey', 'Water/Milk'], instructions: 'Shake well.' }]
+                },
+                keto: {
+                    Breakfast: [{ name: 'Bacon & Eggs', ingredients: ['3 slices Bacon', '2 Eggs'], instructions: 'Fry bacon and eggs.' }],
+                    Lunch: [{ name: 'Fatty Fish Salad', ingredients: ['Salmon', 'Avocado', 'Olive Oil'], instructions: 'Mix ingredients.' }],
+                    Dinner: [{ name: 'Ribeye Steak', ingredients: ['250g Ribeye', 'Butter', 'Asparagus'], instructions: 'Sear steak in butter.' }],
+                    Snack: [{ name: 'Cheese', ingredients: ['50g Cheddar'], instructions: 'Slice and eat.' }]
+                }
+            };
+
+            const selectedFoods = dietFoods[dietType] || dietFoods['balanced'];
+
+            return meals.map(meal => {
+                const calories = Math.round(targetCalories * meal.percent);
+                const options = selectedFoods[meal.name] || dietFoods['balanced'][meal.name];
+                let foodItem = { ...options[Math.floor(Math.random() * options.length)] };
+
+                // Allergy Swap Logic
+                if (userAllergies && userAllergies.length > 0) {
+                    const newIngredients = foodItem.ingredients.map(ing => {
+                        let swappedIng = ing;
+                        userAllergies.forEach(allergy => {
+                            const swaps = ALLERGY_SWAPS[allergy];
+                            if (swaps) {
+                                Object.keys(swaps).forEach(unsafe => {
+                                    if (swappedIng.includes(unsafe)) {
+                                        swappedIng = swappedIng.replace(unsafe, swaps[unsafe]);
+                                    }
+                                });
+                            }
+                        });
+                        return swappedIng;
+                    });
+
+                    // Check if ingredients changed
+                    if (JSON.stringify(newIngredients) !== JSON.stringify(foodItem.ingredients)) {
+                        foodItem.ingredients = newIngredients;
+                        foodItem.isModified = true; // Flag for UI
+                    }
+                }
+
+                return {
+                    name: meal.name,
+                    food: foodItem.name,
+                    ingredients: foodItem.ingredients,
+                    instructions: foodItem.instructions,
+                    calories: calories,
+                    isModified: foodItem.isModified
+                };
+            });
+        };
+
+        const generateWorkoutPlan = (selectedTypes, goal, frequency) => {
+            const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const plan = {};
+
+            let activeDays = [];
+            if (frequency <= 3) {
+                activeDays = ['Monday', 'Wednesday', 'Friday'].slice(0, frequency);
+            } else if (frequency === 4) {
+                activeDays = ['Monday', 'Tuesday', 'Thursday', 'Friday'];
+            } else {
+                activeDays = weekDays.slice(0, frequency);
+            }
+
+            const types = selectedTypes.length > 0 ? selectedTypes : ['Fullbody'];
+
+            weekDays.forEach((day, index) => {
+                if (!activeDays.includes(day)) {
+                    plan[day] = { type: 'Rest', calories: 0, duration: 0, exercises: [] };
+                } else {
+                    const type = types[index % types.length];
+                    const baseBurn = 300;
+                    const burn = goal === 'lose' ? baseBurn + 100 : baseBurn;
+
+                    plan[day] = {
+                        type: type,
+                        calories: burn,
+                        duration: 45 + (Math.random() * 15),
+                        exercises: getExercisesForType(type, goal)
+                    };
+                }
+            });
+
+            return plan;
+        };
+
+        const getExercisesForType = (type, goal) => {
+            const isGain = goal === 'gain';
+            const sets = isGain ? 4 : 3;
+            const reps = isGain ? '8-12' : '12-15';
+
+            // Using placehold.co for dynamic text images
+            const getImage = (name) => `https://placehold.co/100x100/1e293b/6366f1?text=${encodeURIComponent(name)}`;
+
+            const exerciseList = {
+                Fullbody: ['Squats', 'Push-ups', 'Lunges', 'Plank', 'Burpees'],
+                Arms: ['Bicep Curls', 'Tricep Dips', 'Hammer Curls', 'Skullcrushers'],
+                Legs: ['Squats', 'Lunges', 'Leg Press', 'Calf Raises'],
+                Back: ['Pull-ups', 'Barbell Rows', 'Lat Pulldowns', 'Deadlifts'],
+                Chest: ['Bench Press', 'Incline Press', 'Cable Flyes', 'Push-ups'],
+                Glutes: ['Hip Thrusts', 'Glute Bridges', 'Split Squats', 'Kickbacks']
+            };
+
+            const selected = exerciseList[type] || ['General Cardio'];
+
+            return selected.map(ex => ({
+                name: ex,
+                sets: sets,
+                reps: reps,
+                image: getImage(ex)
+            }));
+        };
+
+        const checkWorkoutAdjustment = (consumed, target, currentWorkout) => {
+            if (currentWorkout.type === 'Rest') return currentWorkout;
+
+            const diff = consumed - target;
+
+            // If overeating by > 300 calories, add intensity
+            if (diff > 300) {
+                return {
+                    ...currentWorkout,
+                    calories: currentWorkout.calories + 150,
+                    duration: currentWorkout.duration + 15,
+                    exercises: [
+                        ...currentWorkout.exercises,
+                        {
+                            name: 'Calorie Burner Cardio',
+                            sets: 1,
+                            reps: '15 mins',
+                            image: 'https://placehold.co/100x100/ef4444/ffffff?text=Burner'
+                        }
+                    ],
+                    adjustment: 'increased'
+                };
+            }
+
+            return { ...currentWorkout, adjustment: 'normal' };
+        };
+
+        // --- UTILS: storage.js ---
+        const STORAGE_KEY = 'fitpulse_data';
+
+        const saveUserData = (data) => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('Failed to save data', e);
+            }
+        };
+
+        const loadUserData = () => {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.error('Failed to load data', e);
+                return null;
+            }
+        };
+
+        const clearUserData = () => {
+            localStorage.removeItem(STORAGE_KEY);
+        };
+
+        // --- COMPONENT: ProgressCharts ---
+        const ProgressCharts = ({ history, weightHistory, goalWeight }) => {
+            // Mock data if history is empty
+            const calorieData = history.length > 0 ? history : [
+                { day: 'Mon', calories: 2100, target: 2500 },
+                { day: 'Tue', calories: 2400, target: 2500 },
+                { day: 'Wed', calories: 1800, target: 2500 },
+                { day: 'Thu', calories: 2600, target: 2500 },
+                { day: 'Fri', calories: 2300, target: 2500 },
+                { day: 'Sat', calories: 2000, target: 2500 },
+                { day: 'Sun', calories: 0, target: 2500 },
+            ];
+
+            const weightData = weightHistory.length > 0 ? weightHistory : [
+                { date: 'Week 1', weight: 80 },
+                { date: 'Week 2', weight: 79.5 },
+                { date: 'Week 3', weight: 79 },
+                { date: 'Week 4', weight: 78.2 },
+            ];
+
+            return (
+                <div className="grid grid-2 gap-4">
+                    <div className="card">
+                        <h3 className="mb-4">Weekly Calorie Intake</h3>
+                        <div style={{ height: '250px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={calorieData}>
+                                    <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={12} />
+                                    <YAxis stroke="var(--text-muted)" fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: 'var(--surface)', border: 'none', borderRadius: '8px' }}
+                                        itemStyle={{ color: 'var(--text)' }}
+                                        cursor={{ fill: 'var(--surface-light)' }}
+                                    />
+                                    <ReferenceLine y={calorieData[0]?.target || 2000} stroke="var(--text-muted)" strokeDasharray="3 3" label="Target" />
+                                    <Bar dataKey="calories" fill="var(--primary)" radius={[4, 4, 0, 0]}>
+                                        <LabelList dataKey="calories" position="top" fill="var(--text)" fontSize={12} />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <h3 className="mb-4">Weight Progress</h3>
+                        <div style={{ height: '250px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={weightData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-light)" />
+                                    <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} />
+                                    <YAxis domain={['dataMin - 1', 'dataMax + 1']} stroke="var(--text-muted)" fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: 'var(--surface)', border: 'none', borderRadius: '8px' }}
+                                        itemStyle={{ color: 'var(--text)' }}
+                                    />
+                                    <Line type="monotone" dataKey="weight" stroke="var(--secondary)" strokeWidth={3} dot={{ r: 4 }}>
+                                        <LabelList dataKey="weight" position="top" fill="var(--text)" fontSize={12} offset={10} />
+                                    </Line>
+                                    {/* Goal Line */}
+                                    {goalWeight && (
+                                        <Line type="monotone" dataKey={() => goalWeight} stroke="var(--success)" strokeDasharray="5 5" strokeWidth={2} dot={false} name="Goal" />
+                                    )}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: CustomMealLogger ---
+        const CustomMealLogger = ({ onLog }) => {
+            const [selectedId, setSelectedId] = useState(INGREDIENTS[0].id);
+            const [amount, setAmount] = useState('');
+
+            const handleLog = () => {
+                if (!amount) return;
+                const ingredient = INGREDIENTS.find(i => i.id === selectedId);
+                const calories = Math.round((ingredient.calories * amount) / 100);
+
+                onLog({
+                    name: 'Custom Meal',
+                    food: `${amount}g ${ingredient.name}`,
+                    calories: calories
+                });
+
+                setAmount('');
+            };
+
+            return (
+                <div className="card border-primary" style={{ borderStyle: 'dashed' }}>
+                    <h3 className="mb-4">Log Custom Meal</h3>
+                    <div className="grid gap-4">
+                        <div>
+                            <label className="text-sm text-muted">Ingredient</label>
+                            <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+                                {INGREDIENTS.map(ing => (
+                                    <option key={ing.id} value={ing.id}>{ing.name} ({ing.calories} kcal/100g)</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm text-muted">Amount (grams)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="e.g. 150"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                />
+                                <button className="btn btn-primary" onClick={handleLog}>Log</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: Onboarding ---
+        const Onboarding = ({ onComplete }) => {
+            const [step, setStep] = useState(1);
+            const [formData, setFormData] = useState({
+                age: '',
+                gender: 'male',
+                weight: '',
+                height: '',
+                activityLevel: 'moderate',
+                frequency: 3,
+                goal: 'lose',
+                goalWeight: '',
+                allergies: []
+            });
+
+            const ALLERGIES = ['Nuts', 'Dairy', 'Gluten', 'Eggs', 'Shellfish'];
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const toggleAllergy = (allergy) => {
+                setFormData(prev => {
+                    const current = prev.allergies;
+                    if (current.includes(allergy)) {
+                        return { ...prev, allergies: current.filter(a => a !== allergy) };
+                    } else {
+                        return { ...prev, allergies: [...current, allergy] };
+                    }
+                });
+            };
+
+            const handleNext = () => {
+                if (step < 6) {
+                    setStep(step + 1);
+                } else {
+                    onComplete(formData);
+                }
+            };
+
+            const isStepValid = () => {
+                if (step === 1) return formData.age && formData.weight && formData.height;
+                if (step === 4) return formData.goalWeight;
+                return true;
+            };
+
+            return (
+                <div className="card animate-fade-in" style={{ maxWidth: '500px', margin: '0 auto' }}>
+                    <h2 className="text-center mb-4">Let's Get Started</h2>
+
+                    {step === 1 && (
+                        <div className="grid gap-4">
+                            <h3 className="text-muted text-center">Your Stats</h3>
+                            <div>
+                                <label>Gender</label>
+                                <select name="gender" value={formData.gender} onChange={handleChange}>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Age</label>
+                                <input type="number" name="age" placeholder="Years" value={formData.age} onChange={handleChange} />
+                            </div>
+                            <div>
+                                <label>Current Weight (kg)</label>
+                                <input type="number" name="weight" placeholder="kg" value={formData.weight} onChange={handleChange} />
+                            </div>
+                            <div>
+                                <label>Height (cm)</label>
+                                <input type="number" name="height" placeholder="cm" value={formData.height} onChange={handleChange} />
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="grid gap-4">
+                            <h3 className="text-muted text-center">Activity Level</h3>
+                            <div className="grid gap-4">
+                                {['sedentary', 'light', 'moderate', 'active', 'veryActive'].map((level) => (
+                                    <button
+                                        key={level}
+                                        className={`btn ${formData.activityLevel === level ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => setFormData({ ...formData, activityLevel: level })}
+                                        style={{ textTransform: 'capitalize' }}
+                                    >
+                                        {level.replace(/([A-Z])/g, ' $1').trim()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="grid gap-4">
+                            <h3 className="text-muted text-center">Workout Frequency</h3>
+                            <p className="text-center text-sm text-muted">How many days a week can you train?</p>
+                            <div className="flex justify-between items-center bg-surface-light p-4 rounded">
+                                <button
+                                    className="btn btn-outline"
+                                    onClick={() => setFormData(prev => ({ ...prev, frequency: Math.max(1, prev.frequency - 1) }))}
+                                >-</button>
+                                <div className="text-xl font-bold">{formData.frequency} Days / Week</div>
+                                <button
+                                    className="btn btn-outline"
+                                    onClick={() => setFormData(prev => ({ ...prev, frequency: Math.min(7, prev.frequency + 1) }))}
+                                >+</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 4 && (
+                        <div className="grid gap-4">
+                            <h3 className="text-muted text-center">Your Goal</h3>
+                            <div className="grid gap-4">
+                                <button
+                                    className={`btn ${formData.goal === 'lose' ? 'btn-primary' : 'btn-outline'}`}
+                                    onClick={() => setFormData({ ...formData, goal: 'lose' })}
+                                >
+                                    Lose Weight
+                                </button>
+                                <button
+                                    className={`btn ${formData.goal === 'maintain' ? 'btn-primary' : 'btn-outline'}`}
+                                    onClick={() => setFormData({ ...formData, goal: 'maintain' })}
+                                >
+                                    Maintain Weight
+                                </button>
+                                <button
+                                    className={`btn ${formData.goal === 'gain' ? 'btn-primary' : 'btn-outline'}`}
+                                    onClick={() => setFormData({ ...formData, goal: 'gain' })}
+                                >
+                                    Gain Muscle
+                                </button>
+                            </div>
+
+                            <div className="mt-4">
+                                <label>Target Weight (kg)</label>
+                                <input
+                                    type="number"
+                                    name="goalWeight"
+                                    placeholder="Target kg"
+                                    value={formData.goalWeight}
+                                    onChange={handleChange}
+                                />
+                                {formData.weight && formData.goalWeight && (
+                                    <p className="text-sm text-muted mt-2 text-center">
+                                        {formData.goal === 'lose' && Number(formData.goalWeight) >= Number(formData.weight) && "⚠️ Target should be lower for weight loss"}
+                                        {formData.goal === 'gain' && Number(formData.goalWeight) <= Number(formData.weight) && "⚠️ Target should be higher for muscle gain"}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 5 && (
+                        <div className="grid gap-4">
+                            <h3 className="text-muted text-center">Dietary Restrictions</h3>
+                            <p className="text-center text-sm text-muted">Select any allergies you have.</p>
+                            <div className="grid grid-2 gap-2">
+                                {ALLERGIES.map(allergy => (
+                                    <button
+                                        key={allergy}
+                                        className={`btn ${formData.allergies.includes(allergy) ? 'btn-secondary' : 'btn-outline'}`}
+                                        onClick={() => toggleAllergy(allergy)}
+                                    >
+                                        {allergy} {formData.allergies.includes(allergy) && '✓'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 6 && (
+                        <div className="text-center">
+                            <h3 className="mb-4">All Set!</h3>
+                            <p className="text-muted mb-6">We have everything we need to build your personalized plan.</p>
+                            <div className="text-6xl mb-6">🚀</div>
+                        </div>
+                    )}
+
+                    <div className="mt-4 flex justify-between">
+                        {step > 1 && (
+                            <button className="btn btn-outline" onClick={() => setStep(step - 1)}>
+                                Back
+                            </button>
+                        )}
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleNext}
+                            disabled={!isStepValid()}
+                            style={{ marginLeft: 'auto' }}
+                        >
+                            {step === 6 ? 'Start My Journey' : 'Next'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: DietSelector ---
+        const DietSelector = ({ selectedDiet, onSelect, onNext }) => {
+            return (
+                <div className="animate-fade-in">
+                    <h2 className="text-center mb-4">Choose Your Diet</h2>
+                    <p className="text-center text-muted mb-4">Select a nutrition plan that fits your lifestyle.</p>
+
+                    <div className="grid grid-2 gap-4">
+                        {DIETS.map((diet) => (
+                            <div
+                                key={diet.id}
+                                className={`card cursor-pointer transition-all ${selectedDiet === diet.id ? 'border-primary' : ''}`}
+                                style={{
+                                    border: selectedDiet === diet.id ? '2px solid var(--primary)' : '1px solid var(--surface-light)',
+                                    transform: selectedDiet === diet.id ? 'scale(1.02)' : 'scale(1)'
+                                }}
+                                onClick={() => onSelect(diet.id)}
+                            >
+                                <h3 style={{ color: selectedDiet === diet.id ? 'var(--primary)' : 'var(--text)' }}>
+                                    {diet.name}
+                                </h3>
+                                <p className="text-muted text-sm mb-4">{diet.description}</p>
+
+                                <div className="flex gap-2 text-xs">
+                                    <div className="flex-1 text-center p-2 bg-surface-light rounded">
+                                        <div className="font-bold text-primary">{diet.ratios.protein * 100}%</div>
+                                        <div>Protein</div>
+                                    </div>
+                                    <div className="flex-1 text-center p-2 bg-surface-light rounded">
+                                        <div className="font-bold text-secondary">{diet.ratios.carbs * 100}%</div>
+                                        <div>Carbs</div>
+                                    </div>
+                                    <div className="flex-1 text-center p-2 bg-surface-light rounded">
+                                        <div className="font-bold text-accent">{diet.ratios.fat * 100}%</div>
+                                        <div>Fat</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-4 text-center">
+                        <button
+                            className="btn btn-primary"
+                            onClick={onNext}
+                            disabled={!selectedDiet}
+                        >
+                            Continue to Workout Plan
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: WorkoutPlanner ---
+        const WorkoutPlanner = ({ onComplete }) => {
+            const [selectedTypes, setSelectedTypes] = useState([]);
+
+            const toggleType = (type) => {
+                if (selectedTypes.includes(type)) {
+                    setSelectedTypes(selectedTypes.filter(t => t !== type));
+                } else {
+                    setSelectedTypes([...selectedTypes, type]);
+                }
+            };
+
+            return (
+                <div className="animate-fade-in">
+                    <h2 className="text-center mb-4">Design Your Plan</h2>
+                    <p className="text-center text-muted mb-4">Select the muscle groups you want to focus on.</p>
+
+                    <div className="grid grid-3 gap-4">
+                        {WORKOUT_TYPES.map((type) => (
+                            <button
+                                key={type}
+                                className={`card flex items-center justify-center p-8 transition-all ${selectedTypes.includes(type) ? 'border-primary' : ''}`}
+                                style={{
+                                    border: selectedTypes.includes(type) ? '2px solid var(--primary)' : '1px solid var(--surface-light)',
+                                    backgroundColor: selectedTypes.includes(type) ? 'rgba(99, 102, 241, 0.1)' : 'var(--surface)',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 'bold',
+                                    color: selectedTypes.includes(type) ? 'var(--primary)' : 'var(--text)'
+                                }}
+                                onClick={() => toggleType(type)}
+                            >
+                                {type}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mt-4 text-center">
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => onComplete(selectedTypes)}
+                            disabled={selectedTypes.length === 0}
+                        >
+                            Generate My Plan
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: Dashboard ---
+        const Dashboard = ({ userData, diet, workoutPlan, dietPlan, onUpdateHistory, onWeightUpdate }) => {
+            const [consumed, setConsumed] = useState(0);
+            const [selectedDay, setSelectedDay] = useState('Monday');
+            const [selectedRecipe, setSelectedRecipe] = useState(null);
+
+            // Dynamic Workout State
+            const [todaysWorkout, setTodaysWorkout] = useState(workoutPlan['Monday']);
+
+            useEffect(() => {
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const today = days[new Date().getDay()];
+                setSelectedDay(today);
+
+                // Initialize today's workout
+                if (workoutPlan[today]) {
+                    setTodaysWorkout(workoutPlan[today]);
+                }
+            }, [workoutPlan]);
+
+            // Check for dynamic adjustment whenever consumed calories change
+            useEffect(() => {
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const today = days[new Date().getDay()];
+
+                // Only adjust if we are viewing today's workout
+                if (selectedDay === today && workoutPlan[today]) {
+                    const adjusted = checkWorkoutAdjustment(consumed, userData.targetCalories, workoutPlan[today]);
+                    setTodaysWorkout(adjusted);
+                }
+            }, [consumed, userData.targetCalories, workoutPlan, selectedDay]);
+
+            const targetCalories = userData.targetCalories;
+            const percentage = Math.min(100, Math.round((consumed / targetCalories) * 100));
+            const macros = calculateMacros(targetCalories, diet.id);
+
+            // Display logic: If selected day is today, show dynamic state. Else show static plan.
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const isToday = selectedDay === days[new Date().getDay()];
+            const displayWorkout = isToday ? todaysWorkout : (workoutPlan[selectedDay] || { type: 'Rest', calories: 0, duration: 0, exercises: [] });
+
+            const addCalories = (amount) => {
+                const newTotal = consumed + amount;
+                setConsumed(newTotal);
+                // Update history for charts (mocking "today" as Monday for demo consistency, or using real date)
+                onUpdateHistory(newTotal);
+            };
+
+            return (
+                <div className="animate-fade-in grid gap-4 relative">
+                    {/* Recipe Modal */}
+                    {selectedRecipe && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedRecipe(null)} style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+                            <div className="card max-w-md w-full" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3>{selectedRecipe.food}</h3>
+                                    <button className="btn btn-outline btn-sm" onClick={() => setSelectedRecipe(null)}>✕</button>
+                                </div>
+                                {selectedRecipe.isModified && (
+                                    <div className="mb-4 p-2 bg-success/10 border border-success rounded text-success text-sm">
+                                        ✅ Allergy Safe: Ingredients have been modified for you.
+                                    </div>
+                                )}
+                                {selectedRecipe.ingredients && (
+                                    <div className="mb-4">
+                                        <h4 className="text-primary text-sm mb-2">Ingredients</h4>
+                                        <ul className="list-disc pl-5 text-sm text-muted">
+                                            {selectedRecipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {selectedRecipe.instructions && (
+                                    <div>
+                                        <h4 className="text-primary text-sm mb-2">Instructions</h4>
+                                        <p className="text-sm text-muted">{selectedRecipe.instructions}</p>
+                                    </div>
+                                )}
+                                <div className="mt-6 text-center">
+                                    <button className="btn btn-primary btn-block" onClick={() => setSelectedRecipe(null)}>Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                        <div>
+                            <h1>Hello, Fitness Enthusiast</h1>
+                            <p className="text-muted">Goal: {userData.goal} | {userData.frequency} workouts/week</p>
+                            {userData.goalWeight && (
+                                <p className="text-sm text-success">Target: {userData.goalWeight}kg</p>
+                            )}
+                        </div>
+                        <div className="text-right">
+                            <div className="text-2xl font-bold text-primary">{targetCalories} kcal</div>
+                            <div className="text-sm text-muted">Daily Target</div>
+                        </div>
+                    </div>
+
+                    {/* Calorie Meter */}
+                    <div className="card text-center">
+                        <h3 className="mb-4">Calorie Meter</h3>
+                        <div style={{ position: 'relative', height: '20px', background: 'var(--surface-light)', borderRadius: '10px', overflow: 'hidden', marginBottom: '1rem' }}>
+                            <div
+                                style={{
+                                    width: `${percentage}%`,
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, var(--primary), var(--secondary))',
+                                    transition: 'width 0.5s ease-out'
+                                }}
+                            />
+                        </div>
+                        <div className="flex justify-between text-sm mb-4">
+                            <span>0 kcal</span>
+                            <span className="font-bold">{consumed} / {targetCalories} kcal</span>
+                        </div>
+
+                        {consumed > targetCalories + 300 && (
+                            <div className="mb-4 p-2 bg-danger/10 border border-danger rounded text-danger text-sm">
+                                ⚠️ High calorie intake detected. Workout intensity increased!
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 justify-center">
+                            <button className="btn btn-outline btn-sm" onClick={() => setConsumed(0)}>Reset</button>
+                        </div>
+                    </div>
+
+                    {/* Progress Charts */}
+                    <div className="relative">
+                        <ProgressCharts
+                            history={userData.history || []}
+                            weightHistory={userData.weightHistory || []}
+                            goalWeight={userData.goalWeight}
+                        />
+
+                        {/* Weight Logger Overlay/Section */}
+                        <div className="card mt-4 flex items-center justify-between bg-surface-light">
+                            <span className="font-bold text-sm">Update Weight</span>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="kg"
+                                    className="w-20 p-1 text-sm rounded border border-surface"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            onWeightUpdate(e.target.value);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                                <button className="btn btn-primary btn-sm" onClick={(e) => {
+                                    const input = e.target.previousSibling;
+                                    if (input.value) {
+                                        onWeightUpdate(input.value);
+                                        input.value = '';
+                                    }
+                                }}>Log</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Macros */}
+                    <div className="grid grid-3 gap-4">
+                        <div className="card text-center">
+                            <div className="text-primary font-bold text-xl">{macros.protein}g</div>
+                            <div className="text-muted text-sm">Protein</div>
+                        </div>
+                        <div className="card text-center">
+                            <div className="text-secondary font-bold text-xl">{macros.carbs}g</div>
+                            <div className="text-muted text-sm">Carbs</div>
+                        </div>
+                        <div className="card text-center">
+                            <div className="text-accent font-bold text-xl">{macros.fat}g</div>
+                            <div className="text-muted text-sm">Fat</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-2 gap-4">
+                        <div className="flex flex-col gap-4">
+                            {/* Daily Diet Plan */}
+                            <div className="card">
+                                <h3 className="mb-4">Daily Meal Plan</h3>
+                                <div className="grid gap-3">
+                                    {dietPlan.map((meal, index) => (
+                                        <div key={index} className="flex justify-between items-center p-2 bg-surface-light rounded">
+                                            <div className="flex-1 cursor-pointer" onClick={() => setSelectedRecipe(meal)}>
+                                                <div className="font-bold text-sm">{meal.name}</div>
+                                                <div className="text-xs text-muted flex items-center gap-1">
+                                                    {meal.food} <span className="text-primary">ⓘ</span>
+                                                    {meal.isModified && <span className="text-success ml-1" title="Allergy Safe">🌿</span>}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm font-bold text-primary">
+                                                {meal.calories} kcal
+                                                <button
+                                                    className="ml-2 text-xs btn-outline px-1 rounded border-surface-light"
+                                                    onClick={(e) => { e.stopPropagation(); addCalories(meal.calories); }}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Custom Logger */}
+                            <CustomMealLogger onLog={(meal) => addCalories(meal.calories)} />
+                        </div>
+
+                        {/* Selected Day Workout */}
+                        <div className="card">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3>{selectedDay}'s Workout</h3>
+                                <span className={`badge px-2 py-1 rounded text-xs ${displayWorkout.type === 'Rest' ? 'bg-surface-light' : 'bg-primary text-white'}`}>
+                                    {displayWorkout.type}
+                                </span>
+                            </div>
+
+                            {displayWorkout.type !== 'Rest' ? (
+                                <>
+                                    <div className="flex justify-between text-sm text-muted mb-4">
+                                        <span>🔥 {displayWorkout.calories} kcal burn</span>
+                                        <span>⏱ {Math.round(displayWorkout.duration)} mins</span>
+                                    </div>
+
+                                    {displayWorkout.adjustment === 'increased' && (
+                                        <div className="mb-2 text-xs text-danger font-bold">
+                                            🔥 Intensity increased due to calorie surplus!
+                                        </div>
+                                    )}
+
+                                    <div className="grid gap-2 max-h-[400px] overflow-y-auto">
+                                        {displayWorkout.exercises.map((ex, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-2 bg-surface-light rounded">
+                                                <img src={ex.image} alt={ex.name} className="w-12 h-12 rounded bg-surface object-cover" style={{ width: '48px', height: '48px' }} />
+                                                <div className="flex-1">
+                                                    <div className="text-sm font-bold">{ex.name}</div>
+                                                    <div className="text-xs font-mono text-accent">{ex.sets} sets x {ex.reps}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center text-muted py-8">
+                                    Rest Day. Recover and hydrate! 💧
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Weekly Schedule Preview */}
+                    <div className="card">
+                        <h3 className="mb-4">Weekly Schedule</h3>
+                        <p className="text-sm text-muted mb-2">Click a day to view details</p>
+                        <div className="grid gap-2">
+                            {Object.entries(workoutPlan).map(([day, plan]) => (
+                                <div
+                                    key={day}
+                                    className={`flex justify-between items-center p-2 border-b border-surface-light last:border-0 cursor-pointer transition-colors ${selectedDay === day ? 'bg-surface-light' : 'hover:bg-surface-light'}`}
+                                    onClick={() => setSelectedDay(day)}
+                                >
+                                    <span className={day === selectedDay ? 'text-primary font-bold' : ''}>{day}</span>
+                                    <span className="text-sm text-muted">{plan.type}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: App ---
+        function App() {
+            const [view, setView] = useState('onboarding');
+            const [userData, setUserData] = useState(null);
+            const [selectedDietId, setSelectedDietId] = useState(null);
+            const [workoutPlan, setWorkoutPlan] = useState(null);
+            const [dietPlan, setDietPlan] = useState(null);
+
+            // Load data on mount
+            useEffect(() => {
+                const saved = loadUserData();
+                if (saved) {
+                    setUserData(saved.userData);
+                    setSelectedDietId(saved.dietId);
+                    setWorkoutPlan(saved.workoutPlan);
+                    setDietPlan(saved.dietPlan);
+                    setView('dashboard');
+                }
+            }, []);
+
+            // Save data whenever it changes
+            useEffect(() => {
+                if (userData && workoutPlan && dietPlan) {
+                    saveUserData({
+                        userData,
+                        dietId: selectedDietId,
+                        workoutPlan,
+                        dietPlan
+                    });
+                }
+            }, [userData, workoutPlan, dietPlan, selectedDietId]);
+
+            const handleOnboardingComplete = (data) => {
+                const bmr = calculateBMR(data.weight, data.height, data.age, data.gender);
+                const tdee = calculateTDEE(bmr, data.activityLevel);
+                const targetCalories = calculateTargetCalories(tdee, data.goal);
+
+                // Initialize history
+                const initialHistory = [
+                    { day: 'Mon', calories: 0, target: targetCalories },
+                    { day: 'Tue', calories: 0, target: targetCalories },
+                    { day: 'Wed', calories: 0, target: targetCalories },
+                    { day: 'Thu', calories: 0, target: targetCalories },
+                    { day: 'Fri', calories: 0, target: targetCalories },
+                    { day: 'Sat', calories: 0, target: targetCalories },
+                    { day: 'Sun', calories: 0, target: targetCalories },
+                ];
+
+                // Initialize weight history
+                const initialWeightHistory = [
+                    { date: 'Start', weight: Number(data.weight) }
+                ];
+
+                setUserData({
+                    ...data,
+                    bmr,
+                    tdee,
+                    targetCalories,
+                    history: initialHistory,
+                    weightHistory: initialWeightHistory
+                });
+                setView('diet');
+            };
+
+            const handleDietSelect = (dietId) => {
+                setSelectedDietId(dietId);
+            };
+
+            const handleDietConfirm = () => {
+                // Pass allergies to diet generator
+                const plan = generateDietPlan(userData.targetCalories, selectedDietId, userData.allergies);
+                setDietPlan(plan);
+                setView('workout');
+            };
+
+            const handleWorkoutComplete = (types) => {
+                const plan = generateWorkoutPlan(types, userData.goal, userData.frequency);
+                setWorkoutPlan(plan);
+                setView('dashboard');
+            };
+
+            const handleUpdateHistory = (dailyCalories) => {
+                // Update today's entry in history (Mocking today as Monday for demo)
+                const today = 'Monday';
+
+                setUserData(prev => {
+                    const newHistory = prev.history.map(h =>
+                        h.day === today ? { ...h, calories: dailyCalories } : h
+                    );
+                    return { ...prev, history: newHistory };
+                });
+            };
+
+            const handleWeightUpdate = (newWeight) => {
+                const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                setUserData(prev => ({
+                    ...prev,
+                    weight: newWeight,
+                    weightHistory: [...prev.weightHistory, { date, weight: Number(newWeight) }]
+                }));
+            };
+
+            const getDiet = () => DIETS.find(d => d.id === selectedDietId);
+
+            return (
+                <div className="container">
+                    <header className="flex justify-between items-center mb-8 py-4 border-b border-surface-light">
+                        <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary" style={{ background: 'linear-gradient(to right, var(--primary), var(--secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            StayFit
+                        </div>
+                        {view === 'dashboard' && (
+                            <div className="text-sm text-muted">
+                                {userData?.gender === 'male' ? '👨' : '👩'} {userData?.weight}kg
+                                <button className="ml-4 text-xs btn-outline px-2 py-1 rounded" onClick={() => { localStorage.clear(); window.location.reload(); }}>Reset App</button>
+                            </div>
+                        )}
+                    </header>
+
+                    <main>
+                        {view === 'onboarding' && (
+                            <Onboarding onComplete={handleOnboardingComplete} />
+                        )}
+
+                        {view === 'diet' && (
+                            <DietSelector
+                                selectedDiet={selectedDietId}
+                                onSelect={handleDietSelect}
+                                onNext={handleDietConfirm}
+                            />
+                        )}
+
+                        {view === 'workout' && (
+                            <WorkoutPlanner onComplete={handleWorkoutComplete} />
+                        )}
+
+                        {view === 'dashboard' && userData && workoutPlan && dietPlan && (
+                            <Dashboard
+                                userData={userData}
+                                diet={getDiet()}
+                                workoutPlan={workoutPlan}
+                                dietPlan={dietPlan}
+                                onUpdateHistory={handleUpdateHistory}
+                                onWeightUpdate={handleWeightUpdate}
+                            />
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
